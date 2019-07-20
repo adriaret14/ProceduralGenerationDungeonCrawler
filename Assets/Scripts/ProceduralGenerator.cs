@@ -7,6 +7,11 @@ public class ProceduralGenerator : MonoBehaviour
 
     [Header("Prefabs")]
     [SerializeField] private GameObject ground;
+    [SerializeField] private GameObject ground4Sides;
+    [SerializeField] private GameObject ground3Sides;
+    [SerializeField] private GameObject ground2SidesOpposite;
+    [SerializeField] private GameObject ground2SidesContiguous;
+    [SerializeField] private GameObject ground1Side;
 
     [Header("Material")]
     [SerializeField] private Material exitLevelMaterial;
@@ -21,6 +26,7 @@ public class ProceduralGenerator : MonoBehaviour
     [SerializeField] private int gridSizeZ;
     [SerializeField] private int cellSize;
     [SerializeField] private int numberOfTiles;
+    [SerializeField] private bool randomlyRotateTiles;
 
     [SerializeField] private List<Vector2Int> directions;
     private List<int[,]> preGrids=new List<int[,]>();
@@ -227,6 +233,8 @@ public class ProceduralGenerator : MonoBehaviour
 
     private void InstantiatePrefabsOnGrids()
     {
+        int randomRotationGround = 0;
+        Quaternion rotationGround=new Quaternion();
         for (int i = 0; i < preGrids.Count; i++)
         {
             for (int j = 0; j < gridSizeX; j++)
@@ -235,7 +243,33 @@ public class ProceduralGenerator : MonoBehaviour
                 {
                     if (preGrids[i][j, z] != 0)
                     {
-                        grids[i][j, z] = Instantiate(ground, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
+                        if(randomlyRotateTiles)
+                        {
+                            randomRotationGround = Random.Range(1, 4);
+                            switch (randomRotationGround)
+                            {
+                                case 1:
+                                    rotationGround = Quaternion.AngleAxis(0, Vector3.up);
+                                    break;
+                                case 2:
+                                    rotationGround = Quaternion.AngleAxis(90, Vector3.up);
+                                    break;
+                                case 3:
+                                    rotationGround = Quaternion.AngleAxis(180, Vector3.up);
+                                    break;
+                                case 4:
+                                    rotationGround = Quaternion.AngleAxis(270, Vector3.up);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            rotationGround = Quaternion.identity;
+                        }
+                        //Comprobar alrededores y instanciar el prefab adecuado
+                        CheckSurroundingsAndInstantiate(i, j, z);
+
+                        //grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), rotationGround);
                     }
                     
                     if(preGrids[i][j, z] == 2)
@@ -250,6 +284,147 @@ public class ProceduralGenerator : MonoBehaviour
             }
         }
     }
+
+    private void CheckSurroundingsAndInstantiate(int i, int j, int z)
+    {
+        bool top = false;
+        bool bot = false;
+        bool left = false;
+        bool right = false;
+
+        bool topOut = false;
+        bool botOut = false;
+        bool leftOut = false;
+        bool rightOut = false;
+        int contZeros = 0;
+
+        //Check grid boundings
+        if((j-1)<0)
+        {
+            topOut = true;
+            contZeros++;
+        }
+        else if((j+1)>=gridSizeX)
+        {
+            botOut = true;
+            contZeros++;
+        }
+        else if ((z - 1) < 0)
+        {
+            leftOut = true;
+            contZeros++;
+        }
+        else if ((z + 1) >= gridSizeX)
+        {
+            rightOut = true;
+            contZeros++;
+        }
+
+
+        //Check the surrounding of the position
+        if(!topOut)
+        {
+            if (preGrids[i][j - 1, z] != 0)
+            {
+                top = true;
+            }
+            else
+                contZeros++;
+        }
+        else if(!botOut)
+        {
+            if (preGrids[i][j + 1, z] != 0)
+            {
+                bot = true;
+            }
+            else
+                contZeros++;
+        }
+        else if(!leftOut)
+        {
+            if (preGrids[i][j, z - 1] != 0)
+            {
+                left = true;
+            }
+            else
+                contZeros++;
+        }
+        else if(!rightOut)
+        {
+            if (preGrids[i][j, z + 1] != 0)
+            {
+                right = true;
+            }
+            else
+                contZeros++;
+        }
+
+        switch(contZeros)
+        {
+            case 0:
+                grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
+                break;
+            case 1:
+                if(!top)
+                {
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                }
+                else if(!right)
+                {
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
+                }
+                else if(!bot)
+                {
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
+                }
+                else if(!left)
+                {
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
+                }
+                break;
+            case 2:
+                if(left && right)
+                {
+                    grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
+                }
+                else if (top && bot)
+                {
+                    grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                }
+                else
+                {
+                    if(left && top)
+                    {
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
+                    }
+                    else if(top && right)
+                    {
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
+                    }
+                    else if(right && bot)
+                    {
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
+                    }
+                    else if(bot && left)
+                    {
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                    }
+                }
+                break;
+            case 3:
+                if(left)
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                else if(right)
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
+                else if(top)
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
+                else if(bot)
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
+                break;
+        }
+
+    }
+
     private void PrintPreGrids()
     {
         string line = "";
