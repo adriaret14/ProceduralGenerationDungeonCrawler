@@ -361,10 +361,10 @@ MonoBehaviour:
   numberOfGrids: 1
   positionFirstGrid: {x: 0, y: 0, z: 0}
   gridsDistance: 250
-  gridSizeX: 10
-  gridSizeZ: 10
+  gridSizeX: 30
+  gridSizeZ: 30
   cellSize: 10
-  numberOfTiles: 40
+  numberOfTiles: 650
   randomlyRotateTiles: 0
   directions: []
 --- !u!4 &1708560246
