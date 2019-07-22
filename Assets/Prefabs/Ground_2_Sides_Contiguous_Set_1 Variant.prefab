@@ -7,6 +7,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 100000, guid: 0f9ba1d7a3ea91e46a105a3aa8fbb7db, type: 3}
+      propertyPath: m_Name
+      value: Ground_2_Sides_Contiguous_Set_1 Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 2300000, guid: 0f9ba1d7a3ea91e46a105a3aa8fbb7db, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: f1a05fd61434eaa449f91d423a0b55e4, type: 2}
     - target: {fileID: 400000, guid: 0f9ba1d7a3ea91e46a105a3aa8fbb7db, type: 3}
       propertyPath: m_LocalPosition.x
       value: -30.1
@@ -50,10 +58,6 @@ PrefabInstance:
     - target: {fileID: 400000, guid: 0f9ba1d7a3ea91e46a105a3aa8fbb7db, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100000, guid: 0f9ba1d7a3ea91e46a105a3aa8fbb7db, type: 3}
-      propertyPath: m_Name
-      value: Ground_2_Sides_Contiguous_Set_1
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 0f9ba1d7a3ea91e46a105a3aa8fbb7db, type: 3}
       propertyPath: m_LocalScale.x

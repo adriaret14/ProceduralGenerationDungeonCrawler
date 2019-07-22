@@ -4,18 +4,23 @@ using UnityEngine;
 
 public class ProceduralGenerator : MonoBehaviour
 {
+    [Header("Common Ecosystem Prefabs")]
+    [SerializeField] private GameObject portal;
 
-    [Header("Prefabs")]
+    [Header("Volcano Prefabs")]
     [SerializeField] private GameObject ground;
     [SerializeField] private GameObject ground4Sides;
     [SerializeField] private GameObject ground3Sides;
     [SerializeField] private GameObject ground2SidesOpposite;
     [SerializeField] private GameObject ground2SidesContiguous;
     [SerializeField] private GameObject ground1Side;
+    [SerializeField] private GameObject lavaPlane;
+
 
     [Header("Material")]
     [SerializeField] private Material exitLevelMaterial;
     [SerializeField] private Material entryLevelMaterial;
+    [SerializeField] private Material lavaMaterial;
 
 
     [Header("Random Walk Generator")]
@@ -26,12 +31,10 @@ public class ProceduralGenerator : MonoBehaviour
     [SerializeField] private int gridSizeZ;
     [SerializeField] private int cellSize;
     [SerializeField] private int numberOfTiles;
-    [SerializeField] private bool randomlyRotateTiles;
 
     [SerializeField] private List<Vector2Int> directions;
     private List<int[,]> preGrids=new List<int[,]>();
     private List<GameObject[,]> grids=new List<GameObject[,]>();
-
 
 
 
@@ -98,7 +101,8 @@ public class ProceduralGenerator : MonoBehaviour
             {
                 //Set the initial position
                 lastPosition = GetRandomGridPosition();
-                preGrids[i][lastPosition.x, lastPosition.y] = 1;
+                preGrids[i][lastPosition.x, lastPosition.y] = 3;
+                Debug.Log("Inicio en celda: " + lastPosition);
                 lastDirection = new Vector2Int(0, 0);
 
                 //Loop until we reach the number of tiles
@@ -131,11 +135,12 @@ public class ProceduralGenerator : MonoBehaviour
                         //If the grid cell was on 0 value, then update the cont
                         if (preGrids[i][lastPosition.x + newDirection.x, lastPosition.y + newDirection.y] == 0)
                         {
+                            //Change the grid cell value to 1
+                            preGrids[i][lastPosition.x+newDirection.x, lastPosition.y+newDirection.y] = 1;
                             tilesCont++;
+                            
                         }
-
-                        //Change the grid cell value to 1
-                        preGrids[i][lastPosition.x, lastPosition.y] = 1;
+                        
                         lastPosition += newDirection;
                         lastDirection = newDirection;
                         lastDirectionError.Clear();
@@ -154,7 +159,8 @@ public class ProceduralGenerator : MonoBehaviour
             else
             {
                 //Set the startingPosition at the lastPosition of the previous grid
-                preGrids[i][lastPosition.x, lastPosition.y] = 1;
+                preGrids[i][lastPosition.x, lastPosition.y] = 3;
+                Debug.Log("Inicio en celda: " + lastPosition);
                 lastDirection = new Vector2Int(0, 0);
 
                 //Loop until we reach the number of tiles
@@ -187,11 +193,13 @@ public class ProceduralGenerator : MonoBehaviour
                         //If the grid cell was on 0 value, then update the cont
                         if (preGrids[i][lastPosition.x + newDirection.x, lastPosition.y + newDirection.y] == 0)
                         {
+                            //Change the grid cell value to 1
+                            preGrids[i][lastPosition.x+newDirection.x, lastPosition.y+newDirection.y] = 1;
+
                             tilesCont++;
                         }
 
-                        //Change the grid cell value to 1
-                        preGrids[i][lastPosition.x, lastPosition.y] = 1;
+                        
                         lastPosition += newDirection;
                         lastDirection = newDirection;
                         lastDirectionError.Clear();
@@ -243,47 +251,54 @@ public class ProceduralGenerator : MonoBehaviour
                 {
                     if (preGrids[i][j, z] != 0)
                     {
-                        if(randomlyRotateTiles)
-                        {
-                            randomRotationGround = Random.Range(1, 4);
-                            switch (randomRotationGround)
-                            {
-                                case 1:
-                                    rotationGround = Quaternion.AngleAxis(0, Vector3.up);
-                                    break;
-                                case 2:
-                                    rotationGround = Quaternion.AngleAxis(90, Vector3.up);
-                                    break;
-                                case 3:
-                                    rotationGround = Quaternion.AngleAxis(180, Vector3.up);
-                                    break;
-                                case 4:
-                                    rotationGround = Quaternion.AngleAxis(270, Vector3.up);
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            rotationGround = Quaternion.identity;
-                        }
+
                         //Comprobar alrededores y instanciar el prefab adecuado
                         CheckSurroundingsAndInstantiate(i, j, z);
+                        
 
-                        //grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), rotationGround);
+                        //grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), rotationGround);
                     }
-                    
-                    if(preGrids[i][j, z] == 2)
+                    else
                     {
-                        grids[i][j, z].GetComponent<Renderer>().material = exitLevelMaterial;
+                        //InstantiateDeeperCoverGround(i, j, z);
                     }
-                    else if(preGrids[i][j, z] == 3)
+
+                    if (preGrids[i][j, z] == 2)
+                    {
+                        //Salida de nivel
+                        grids[i][j, z].GetComponent<Renderer>().material = exitLevelMaterial;
+                        Instantiate(portal, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i) - 9.5f, positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(35f, Vector3.up));
+
+                    }
+                    else if (preGrids[i][j, z] == 3)
                     {
                         grids[i][j, z].GetComponent<Renderer>().material = entryLevelMaterial;
+                        //Instantiate(portal, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i) - 9.5f, positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(35f, Vector3.up));
+
                     }
                 }
             }
+            InstantiateDeeperCoverGround(i);
         }
+        
     }
+
+    private void InstantiateDeeperCoverGround(int i)
+    {
+        Vector3 coverPos = new Vector3(positionFirstGrid.x + ((gridSizeX * cellSize) / 2), positionFirstGrid.y + (cellSize * i)+ 3.0f, positionFirstGrid.z + ((gridSizeZ*cellSize) / 2));
+        
+        GameObject lavaPlaneInstance = Instantiate(lavaPlane, coverPos, Quaternion.AngleAxis(-90f, Vector3.right));
+        lavaPlaneInstance.transform.localScale *= (gridSizeX+4);
+        float defaultValueShader = lavaPlaneInstance.GetComponent<Renderer>().material.GetFloat("Vector1_64CE64ED");
+        Debug.Log("Valor default del shader: "+ defaultValueShader.ToString());
+       lavaPlaneInstance.GetComponent<Renderer>().material.SetFloat("Vector1_64CE64ED", defaultValueShader*(gridSizeX+4));
+
+    }
+    //private void InstantiateDeeperCoverGround(int i, int j, int z)
+    //{
+    //    grids[i][j, z] = Instantiate(lavaPlane, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+    //}
+
 
     private void CheckSurroundingsAndInstantiate(int i, int j, int z)
     {
@@ -362,81 +377,81 @@ public class ProceduralGenerator : MonoBehaviour
         switch(contZeros)
         {
             case 0:
-                //grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                //grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                grids[i][j, z] = Instantiate(ground4Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                 break;
             case 1:
                 if(!top)
                 {
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     //grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
                 }
                 else if(!right)
                 {
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
                 }
                 else if(!bot)
                 {
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 180f, Space.World);
                 }
                 else if(!left)
                 {
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    //grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground3Sides, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 270f, Space.World);
                 }
                 break;
             case 2:
                 if(left && right)
                 {
-                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
                 }
                 else if (top && bot)
                 {
-                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
-                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                    //grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground2SidesOpposite, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                 }
                 else
                 {
                     if(left && top)
                     {
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                         grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
                     }
                     else if(top && right)
                     {
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                         grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 180f, Space.World);
                     }
                     else if(right && bot)
                     {
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                         grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 270f, Space.World);
                     }
                     else if(bot && left)
                     {
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
-                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                        //grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                        grids[i][j, z] = Instantiate(ground2SidesContiguous, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                         //grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
                     }
                 }
@@ -444,30 +459,30 @@ public class ProceduralGenerator : MonoBehaviour
             case 3:
                 if(left)
                 {
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
-                    //grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 90f, 0));
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 180f, Space.World);
                 }
                 else if(right)
                 {
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
-                    grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 180f, Space.World);
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 270f, 0));
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 180f, Space.World);
                 }    
                 else if(top)
                 {
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 270f, Space.World);
                 }  
                 else if(bot)
                 {
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
-                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.identity);
-                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.x + (cellSize * i), positionFirstGrid.x + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.Euler(-90f, 180f, 0));
+                    //grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.identity);
+                    grids[i][j, z] = Instantiate(ground1Side, new Vector3(positionFirstGrid.x + (cellSize * j), positionFirstGrid.y + (cellSize * i), positionFirstGrid.z + (cellSize * z)), Quaternion.AngleAxis(-90f, Vector3.right));
                     grids[i][j, z].gameObject.transform.Rotate(Vector3.up, 90f, Space.World);
                 }
                 break;
